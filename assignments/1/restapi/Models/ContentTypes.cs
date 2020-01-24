@@ -6,6 +6,8 @@ namespace restapi.Models
 
         public const string Root = "application/com.my-company.my-product.root+json";
 
+        public const string TimesheetRoot = "application/com.my-company.my-product.timesheetRoot+json";
+
         public const string Timesheet = "application/com.my-company.my-product.timesheet+json";
 
         public const string Timesheets = "application/com.my-company.my-product.timesheets+json";
@@ -27,5 +29,7 @@ namespace restapi.Models
         public const string Rejection = "application/com.my-company.my-product.timesheet-rejection+json";
         
         public const string Approval = "application/com.my-company.my-product.timesheet-approval+json";
+
+        public const string Draft = "application/com.my-company.my-product.timesheet-draft+json";
     }
 }

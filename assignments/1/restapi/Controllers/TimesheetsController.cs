@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using restapi.Models;
 
 namespace restapi.Controllers
@@ -112,6 +113,117 @@ namespace restapi.Controllers
             }
             else
             {
+                return NotFound();
+            }
+        }
+
+        // Add support for getting a single line
+        [HttpGet("{id:guid}/lines/{lineid:guid}")]
+        [Produces(ContentTypes.TimesheetLines)]
+        [ProducesResponseType(typeof(IEnumerable<TimecardLine>), 200)]
+        [ProducesResponseType(404)]
+        public IActionResult GetLine(Guid id, Guid lineid)
+        {
+            logger.LogInformation($"Looking for lineid: {lineid} ");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                foreach (var a in timecard.Lines)
+                {
+                    if (a.UniqueIdentifier == lineid)
+                    {
+                        return Ok(a);
+                    }
+                }
+            }
+
+            return NotFound();
+        }
+
+        // Add suport for modifying a single line
+        [HttpPost("{id:guid}/lines/{lineid:guid}")]
+        [Produces(ContentTypes.TimesheetLine)]
+        [ProducesResponseType(typeof(TimecardLine), 200)]
+        [ProducesResponseType(404)]
+        //[ProducesResponseType(typeof(InvalidStateError), 409)]
+        public IActionResult UpdateLine(Guid id, Guid lineid, [FromBody] DocumentLine documentLine)
+        {
+            logger.LogInformation($"Looking for lineid {lineid}");
+
+            Timecard timecard = repository.Find(id);
+            TimecardLine annotatedLine = null;
+
+            if (timecard != null)
+            {
+                // TBD: Need to handle the case when the lineid is invalid
+                foreach (var line in timecard.Lines)
+                {
+                    if (line.UniqueIdentifier == lineid)
+                    {
+                        annotatedLine = line.Update(documentLine);
+                    }
+                }
+
+                // Invalid lineid
+                if (annotatedLine != null)
+                {
+                    repository.Update(timecard);
+
+                    return Ok(annotatedLine);
+                }
+                else
+                {
+                    return NotFound(string.Format("Timecard line {0}.", lineid));
+                }
+            }
+            else
+            {
+                // Timecard not found
+                return NotFound();
+            }
+        }
+
+        // Add support for updating a line by using Patch
+        [HttpPatch("{id:guid}/lines/{lineid:guid}")]
+        [Produces(ContentTypes.TimesheetLine)]
+        [ProducesResponseType(typeof(TimecardLine), 200)]
+        [ProducesResponseType(404)]
+        //[ProducesResponseType(typeof(InvalidStateError), 409)]
+        public IActionResult UpdateLineItem(Guid id, Guid lineid, [FromBody] JObject documentLine)
+        {
+            logger.LogInformation($"Looking for lineid {lineid}");
+
+            Timecard timecard = repository.Find(id);
+            TimecardLine annotatedLine = null;
+
+            if (timecard != null)
+            {
+                // TBD: Need to handle the case when the lineid is invalid
+                foreach (var line in timecard.Lines)
+                {
+                    if (line.UniqueIdentifier == lineid)
+                    {
+                        annotatedLine = line.Update(documentLine);
+                    }
+                }
+
+                // Invalid lineid
+                if (annotatedLine != null)
+                {
+                    repository.Update(timecard);
+
+                    return Ok(annotatedLine);
+                }
+                else
+                {
+                    return NotFound(string.Format("Timecard line {0}.", lineid));
+                }
+            }
+            else
+            {
+                // Timecard not found
                 return NotFound();
             }
         }
@@ -342,6 +454,78 @@ namespace restapi.Controllers
             }
         }
 
+        // Add support for draft
+        // Change a timecard from submitted to draft again
+        [HttpGet("{id:guid}/Draft")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(MissingTransitionError), 409)]
+        public IActionResult GetTimeCardDraft(Guid id)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status == TimecardStatus.Submitted)
+                {
+                    var transition = timecard.Transitions
+                                        .Where(t => t.TransitionedTo == TimecardStatus.Draft)
+                                        .OrderByDescending(t => t.OccurredAt)
+                                        .FirstOrDefault();
+
+                    return Ok(transition);
+                }
+                else
+                {
+                    return StatusCode(409, new MissingTransitionError() { });
+                }
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        // Add support for draft
+        // Change a timecard from submitted to draft again
+        [HttpPost("{id:guid}/Draft")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(InvalidStateError), 409)]
+        [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        public IActionResult PostTimeCardDraft(Guid id, [FromBody] Draft draft)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status != TimecardStatus.Submitted)
+                {
+                    return StatusCode(409, new InvalidStateError() { });
+                }
+
+                var transition = new Transition(draft, TimecardStatus.Draft);
+
+                logger.LogInformation($"Adding rejection transition {transition}");
+
+                timecard.Transitions.Add(transition);
+
+                repository.Update(timecard);
+
+                return Ok(transition);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
         [HttpGet("{id:guid}/rejection")]
         [Produces(ContentTypes.Transition)]
         [ProducesResponseType(typeof(Transition), 200)]
@@ -381,6 +565,7 @@ namespace restapi.Controllers
         [ProducesResponseType(404)]
         [ProducesResponseType(typeof(InvalidStateError), 409)]
         [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        [ProducesResponseType(typeof(InvalidApproverError), 403)]
         public IActionResult Approve(Guid id, [FromBody] Approval approval)
         {
             logger.LogInformation($"Looking for timesheet {id}");
@@ -389,6 +574,11 @@ namespace restapi.Controllers
 
             if (timecard != null)
             {
+                if (timecard.Employee == approval.Person)
+                {
+                    return StatusCode(403, new InvalidApproverError() { });
+                }
+
                 if (timecard.Status != TimecardStatus.Submitted)
                 {
                     return StatusCode(409, new InvalidStateError() { });

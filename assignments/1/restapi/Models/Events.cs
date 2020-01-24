@@ -1,3 +1,4 @@
+using System.Net.Http;
 using LiteDB;
 using Newtonsoft.Json;
 using restapi.Helpers;
@@ -67,6 +68,17 @@ namespace restapi.Models
     {
         [BsonIgnore]
         public int Approver { get => Person; set { Person = value; } }
+
+        public override string ToString()
+        {
+            return PublicJsonSerializer.SerializeObjectIndented(this);
+        }
+    }
+
+    public class Draft : Event
+    {
+        [BsonIgnore]
+        public int Drafter { get => Person; set { Person = value; } }
 
         public override string ToString()
         {

@@ -20,4 +20,11 @@ namespace restapi.Models
 
         public string Message { get => "No state transition of requested type present in timecard"; }
     }
+
+    public class InvalidApproverError
+    {
+        public int ErrorCode { get => 403; }
+
+        public string Message { get => "Approver cannot be the same as owner of timecard"; }
+    }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using restapi.Helpers;
 
 namespace restapi.Models
@@ -40,8 +41,8 @@ namespace restapi.Models
             return this;
         }
 
-        // public TimecardLine Update(JObject line)
-        // {
+        public TimecardLine Update(JObject line)
+        {
         //     // this is a little too brittle for my taste because of the
         //     // hard-coded strings, but it does work to show that you need
         //     // to step outside of the type system to make this work
@@ -49,24 +50,25 @@ namespace restapi.Models
         //     // and, because this is brittle, it should be wrapped in an
         //     // appropriate try/catch to throw a 4xx error back
 
-        //     Week = (int)(line.SelectToken("week") ?? Week);
-        //     Year = (int)(line.SelectToken("year") ?? Year);
-        //     var day = line.SelectToken("day");
-        //     Hours = (float)(line.SelectToken("hours") ?? Hours);
-        //     Project = (string)(line.SelectToken("project") ?? Project);
 
-        //     if (day != null)
-        //     {
-        //         Day = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), (string)day, true);
-        //     }
+            Week = (int) (line.SelectToken("week") ?? Week);
+                 Year = (int) (line.SelectToken("year") ?? Year);
+                 var day = line.SelectToken("day");
+            Hours = (float) (line.SelectToken("hours") ?? Hours);
+                 Project = (string) (line.SelectToken("project") ?? Project);
 
-        //     // if the date components change, let's update
-        //     SetupPeriodValues();
+            if (day != null)
+            {
+                Day = (DayOfWeek) Enum.Parse(typeof(DayOfWeek), (string) day, true);
+            }
 
-        //     return this;
-        // }
+            // if the date components change, let's update
+            SetupPeriodValues();
 
-        [JsonIgnore]
+             return this;
+         }
+
+    [JsonIgnore]
         public DateTime workDate { get; set; }
 
         [JsonIgnore]

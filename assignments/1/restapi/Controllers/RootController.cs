@@ -32,5 +32,33 @@ namespace restapi.Controllers
                 }
             };
         }
+
+
+        [Route("~/")]
+        [HttpPost]
+        [Produces(ContentTypes.Root)]
+        [ProducesResponseType(typeof(IDictionary<ApplicationRelationship, object>), 200)]
+        public IDictionary<ApplicationRelationship, object> Post()
+        {
+            return new Dictionary<ApplicationRelationship, object>()
+            {
+                {
+                    ApplicationRelationship.Timesheets, new List<DocumentLink>()
+                    {
+                        new DocumentLink()
+                        {
+                            Method = Method.Post,
+                            Type = ContentTypes.Root,
+                            Relationship = DocumentRelationship.Timesheets,
+                            Reference = "/timesheets"
+                        }
+                    }
+                },
+                {
+                    ApplicationRelationship.Version, "0.1"
+                }
+            };
+        }
+
     }
 }

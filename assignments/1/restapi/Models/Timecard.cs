@@ -117,6 +117,14 @@ namespace restapi.Models
                         Reference = $"/timesheets/{UniqueIdentifier}/approval"
                     });
 
+                    links.Add(new ActionLink()
+                    {
+                        Method = Method.Post,
+                        Type = ContentTypes.Draft,
+                        Relationship = ActionRelationship.Draft,
+                        Reference = $"/timesheets/{UniqueIdentifier}/draft"
+                    });
+
                     break;
 
                 case TimecardStatus.Approved:
@@ -126,6 +134,11 @@ namespace restapi.Models
                 case TimecardStatus.Cancelled:
                     // terminal state, nothing possible here
                     break;
+                case TimecardStatus.Rejected:
+                    // terminal state, nothing possible here
+                    break;
+
+
             }
 
             return links;
