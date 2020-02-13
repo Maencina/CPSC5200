@@ -9,6 +9,11 @@ namespace restapi.Helpers
 {
     public static class PublicJsonSerializer
     {
+        /// <summary>
+        /// Serialize method
+        /// </summary>
+        /// <param name="outputStream"></param>
+        /// <param name="value"></param>
         public static void Serialize(Stream outputStream, object value)
         {
             var serializer = new JsonSerializer();
